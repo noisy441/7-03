@@ -143,6 +143,8 @@ http {
 
 
 ```
+`Скриншоты`
+
 ![Скриншот 1](https://github.com/noisy441/7-03/blob/main/img/img1.png)`
 
 ![Скриншот 2](https://github.com/noisy441/7-03/blob/main/img/img2.png)`
@@ -162,19 +164,19 @@ http {
 
 ### Решение 3
 
-`Я создал еще одну виртуальную машину с именем web-c. Для более удобного использования ansible, адрес новой машины записывается в hosts.ini в раздел [dbservers]. Я решил устанавливать на эту машину mysql, для чего был создан отдельный плейбук db_playbook.yml. что бы пароли не лежали в открытом доступе использовал ansible vault и занес файл с зашифрованными паролями в .gitignore`
+`Я создал еще одну виртуальную машину с именем web-c. Для более удобного использования ansible, адрес новой машины записывается в hosts.ini в раздел [dbservers]. Я решил устанавливать на эту машину mysql, для чего был создан отдельный плейбук db_playbook.yml. что бы пароли не лежали в открытом доступе использовал ansible vault и занес файл с зашифрованными паролями в .gitignore. В test.yml была добавлена проверка состояния службы mysql`
 
 
 db_playbook.yml
+
 ```
 ---
-- name: Установка и настройка MySQL сервера
+- name: Installing and configuring a MySQL server
   hosts: dbservers
   become: true
 
   vars:
     mysql_user: root
-    mysql_user_password: "123"  # Заменить на реальный пароль
     mysql_config:
       column_case_sensitive: true 
   vars_files:
@@ -182,7 +184,7 @@ db_playbook.yml
   tasks:
    
 
-    - name: Настройка параметра column_case_sensitive
+    - name: Configuring the column_case_ensitive parameter
       community.mysql.mysql_variables:  
         login_user: "{{ mysql_user }}"
         login_password: "{{ mysql_user_password }}"
@@ -190,28 +192,28 @@ db_playbook.yml
         value: "0"
       when: mysql_config.column_case_sensitive | bool
 
-    - name: Перезапуск MySQL для применения настроек
+    - name: Restarting MySQL to apply settings
       service:
         name: mysql
         state: restarted
 
-    - name: Проверка текущих настроек
+    - name: Checking the current settings
       command: mysql -NBe "SHOW VARIABLES LIKE 'lower_case_table_names'"
       register: case_sensitive_check
       changed_when: false
 
-    - name: Вывод статуса настроек
+    - name: Displaying the settings status
       debug:
-        msg: "Режим регистрозависимости: {{ case_sensitive_check.stdout_lines }}"
+        msg: "Register-dependent mode: {{ case_sensitive_check.stdout_lines }}"
 
-    - name: Создание базы данных
+    - name: Creating a database
       community.mysql.mysql_db:
         name: mydatabase
         state: present
         login_user: "{{ mysql_user }}"
         login_password: "{{ mysql_user_password }}"
 
-    - name: Создание пользователя с привилегиями
+    - name: Creating a user with privileges
       community.mysql.mysql_user:
         name: myuser
         password: "{{ mysql_user_password }}"
@@ -221,53 +223,65 @@ db_playbook.yml
         login_password: "{{ mysql_user_password }}"
 
 ```
+`Скриншоты`
 
-`При необходимости прикрепитe сюда скриншоты
-![Название скриншота 2](ссылка на скриншот 2)`
+![Скриншот 1](https://github.com/noisy441/7-03/blob/main/img/img5.png)`
+
+test.yml
+
+```
+---
+- name: test
+  gather_facts: false
+  hosts: webservers
+  vars:
+    ansible_ssh_user: user
+  become: yes
+
+  pre_tasks:
+    - name: Validating the ssh port is open and
+      wait_for:
+        host: "{{ (ansible_ssh_host|default(ansible_host))|default(inventory_hostname) }}"
+        port: 22
+        delay: 5
+        timeout: 300
+        state: started
+        search_regex: OpenSSH
+
+  tasks:
+    - name: create test file
+      copy:
+        dest: /tmp/test
+        content: "success"
+
+- hosts: dbservers
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Checking the MySQL service status
+      ansible.builtin.systemd:
+        state: started
+        name: mysql
+      register: mysql_status
+
+    - name: Service status output
+      debug:
+        var: mysql_status.state 
+```
+
+`Скриншоты`
+
+![Скриншот 1](https://github.com/noisy441/7-03/blob/main/img/img6.png)`
 
 
 ---
 
-### Задание 3
+### Задание 3.1
 
-`Приведите ответ в свободной форме........`
+`Провел настройку yc tools по инструкции и добавил в конец файла ~/.bashrc команду export YC_TOKEN=$(yc iam create-token). Запустил terragorm в том же окне, инфраструктура проверилась и так как была уже создана проверка прошла успешно. Далее командой terraform destroy инфраструктура была удалена.`
 
-1. `Заполните здесь этапы выполнения, если требуется ....`
-2. `Заполните здесь этапы выполнения, если требуется ....`
-3. `Заполните здесь этапы выполнения, если требуется ....`
-4. `Заполните здесь этапы выполнения, если требуется ....`
-5. `Заполните здесь этапы выполнения, если требуется ....`
-6. 
 
-```
-Поле для вставки кода...
-....
-....
-....
-....
-```
+![Скриншот 1](https://github.com/noisy441/7-03/blob/main/img/img7.png)`
 
-`При необходимости прикрепитe сюда скриншоты
-![Название скриншота](ссылка на скриншот)`
+![Скриншот 2](https://github.com/noisy441/7-03/blob/main/img/img8.png)`
 
-### Задание 4
-
-`Приведите ответ в свободной форме........`
-
-1. `Заполните здесь этапы выполнения, если требуется ....`
-2. `Заполните здесь этапы выполнения, если требуется ....`
-3. `Заполните здесь этапы выполнения, если требуется ....`
-4. `Заполните здесь этапы выполнения, если требуется ....`
-5. `Заполните здесь этапы выполнения, если требуется ....`
-6. 
-
-```
-Поле для вставки кода...
-....
-....
-....
-....
-```
-
-`При необходимости прикрепитe сюда скриншоты
-![Название скриншота](ссылка на скриншот)`
