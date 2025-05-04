@@ -11,4 +11,4 @@
 terraform.tfvars
 
 #ansible vault
-**/group_vars/*
+group_vars/dbservers.yml
