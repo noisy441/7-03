@@ -21,3 +21,17 @@
       copy:
         dest: /tmp/test
         content: "success"
+
+- hosts: dbservers
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Checking the MySQL service status
+      ansible.builtin.systemd:
+        state: started
+        name: mysql
+      register: mysql_status
+
+    - name: Service status output
+      debug:
+        var: mysql_status.state 

@@ -51,12 +51,12 @@ Host *.ru-central1.internal
 
 ---
 
-### Задание 1
+### Задание 1 и 2 
 
 1. `Повторить демонстрацию лекции(развернуть vpc, 2 веб сервера, бастион сервер)`
 2. `С помощью ansible подключиться к web-a и web-b , установить на них nginx.(написать нужный ansible playbook) Провести тестирование и приложить скриншоты развернутых в облаке ВМ, успешно отработавшего ansible playbook.`
 
-### Решение 1
+### Решение 1 и 2
 
 install_nginx.yml
 
@@ -153,23 +153,73 @@ http {
 
 ---
 
-### Задание 2
+### Задание 3
 
-`Приведите ответ в свободной форме........`
 
-1. `Заполните здесь этапы выполнения, если требуется ....`
-2. `Заполните здесь этапы выполнения, если требуется ....`
-3. `Заполните здесь этапы выполнения, если требуется ....`
-4. `Заполните здесь этапы выполнения, если требуется ....`
-5. `Заполните здесь этапы выполнения, если требуется ....`
-6. 
+1. `Добавить еще одну виртуальную машину`
+2. `Установить на нее любую базу данных`
+3. `Выполнить проверку состояния запущенных служб через Ansible`
 
+### Решение 3
+
+`Я создал еще одну виртуальную машину с именем web-c. Для более удобного использования ansible, адрес новой машины записывается в hosts.ini в раздел [dbservers]. Я решил устанавливать на эту машину mysql, для чего был создан отдельный плейбук db_playbook.yml. что бы пароли не лежали в открытом доступе использовал ansible vault и занес файл с зашифрованными паролями в .gitignore`
+
+
+db_playbook.yml
 ```
-Поле для вставки кода...
-....
-....
-....
-....
+---
+- name: Установка и настройка MySQL сервера
+  hosts: dbservers
+  become: true
+
+  vars:
+    mysql_user: root
+    mysql_user_password: "123"  # Заменить на реальный пароль
+    mysql_config:
+      column_case_sensitive: true 
+  vars_files:
+    - group_vars/dbservers.yml.enc
+  tasks:
+   
+
+    - name: Настройка параметра column_case_sensitive
+      community.mysql.mysql_variables:  
+        login_user: "{{ mysql_user }}"
+        login_password: "{{ mysql_user_password }}"
+        variable: "lower_case_table_names"
+        value: "0"
+      when: mysql_config.column_case_sensitive | bool
+
+    - name: Перезапуск MySQL для применения настроек
+      service:
+        name: mysql
+        state: restarted
+
+    - name: Проверка текущих настроек
+      command: mysql -NBe "SHOW VARIABLES LIKE 'lower_case_table_names'"
+      register: case_sensitive_check
+      changed_when: false
+
+    - name: Вывод статуса настроек
+      debug:
+        msg: "Режим регистрозависимости: {{ case_sensitive_check.stdout_lines }}"
+
+    - name: Создание базы данных
+      community.mysql.mysql_db:
+        name: mydatabase
+        state: present
+        login_user: "{{ mysql_user }}"
+        login_password: "{{ mysql_user_password }}"
+
+    - name: Создание пользователя с привилегиями
+      community.mysql.mysql_user:
+        name: myuser
+        password: "{{ mysql_user_password }}"
+        priv: "mydatabase.*:ALL"
+        host: '%'  
+        login_user: "{{ mysql_user }}"
+        login_password: "{{ mysql_user_password }}"
+
 ```
 
 `При необходимости прикрепитe сюда скриншоты

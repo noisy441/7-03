@@ -37,3 +37,104 @@
     - name: display nginx status
       debug:
         var: nginx_status.stdout_lines
+
+- name: install PostgreSQL
+  hosts: dbservers
+  become: true
+  vars:
+    postgresql_version: "16"
+    db_name: "mydatabase"
+    db_user: "dbuser"
+    db_password: "SecurePassword123!"
+    
+  tasks:
+
+    - name: Install pip
+      pip:
+        name: pip
+        state: present
+
+    - name: import key reposutory
+      apt_key:
+        url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+        state: present
+
+    - name: add repository PostgreSQL
+      apt_repository:
+        repo: "deb http://apt.postgresql.org/pub/repos/apt/ {{ ansible_distribution_release }}-pgdg main"
+        state: present
+        filename: postgresql
+        
+    - name: update cache apt
+      apt:
+        update_cache: yes
+        
+    - name: Install PostgreSQL
+      apt:
+        name:
+          - postgresql-{{ postgresql_version }}
+          - postgresql-client-{{ postgresql_version }}
+        state: present
+        
+    - name: Launching and enabling the PostgreSQL service
+      service:
+        name: postgresql
+        state: started
+        enabled: true
+
+    - name: Install PostgreSQL development packages
+      apt:
+        name:
+        - libpq-dev
+        - python3-dev
+        - build-essential
+        state: present
+
+    - name: Install psycopg2 with specified Python interpreter
+      pip:
+        name: psycopg2
+        state: present
+        executable: "{{ python_interpreter }}-pip"
+      vars:
+        python_interpreter: "python3.9"
+
+    - name: Try installing psycopg2-binary if regular install fails
+      pip:
+        name: psycopg2-binary
+        state: present
+      when: psycopg2_install.failed
+   
+    - name: create DB
+      postgresql_db:
+        name: "{{ db_name }}"
+        encoding: "UTF-8"
+        lc_collate: "ru_RU.UTF-8"
+        lc_ctype: "ru_RU.UTF-8"
+        
+    - name: create user DB
+      postgresql_user:
+        db: "{{ db_name }}"
+        name: "{{ db_user }}"
+        password: "{{ db_password }}"
+        role_attr_flags: "CREATEDB"
+        
+    - name: Configuring the PostgreSQL configuration
+      lineinfile:
+        path: "/etc/postgresql/{{ postgresql_version }}/main/postgresql.conf"
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      with_items:
+        - { regexp: '^#max_connections', line: 'max_connections = 200' }
+        - { regexp: '^#shared_buffers', line: 'shared_buffers = 512MB' }
+        - { regexp: '^#effective_cache_size', line: 'effective_cache_size = 2GB' }
+        
+    - name: Restarting PostgreSQL after changes
+      service:
+        name: postgresql
+        state: restarted
+        
+  handlers:
+    - name: Restarting PostgreSQL
+      service:
+        name: postgresql
+        state: restarted

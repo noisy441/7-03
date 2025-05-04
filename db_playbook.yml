@@ -1,0 +1,51 @@
+---
+- name: Installing and configuring a MySQL server
+  hosts: dbservers
+  become: true
+
+  vars:
+    mysql_user: root
+    mysql_config:
+      column_case_sensitive: true 
+  vars_files:
+    - group_vars/dbservers.yml.enc
+  tasks:
+   
+
+    - name: Configuring the column_case_ensitive parameter
+      community.mysql.mysql_variables:  
+        login_user: "{{ mysql_user }}"
+        login_password: "{{ mysql_user_password }}"
+        variable: "lower_case_table_names"
+        value: "0"
+      when: mysql_config.column_case_sensitive | bool
+
+    - name: Restarting MySQL to apply settings
+      service:
+        name: mysql
+        state: restarted
+
+    - name: Checking the current settings
+      command: mysql -NBe "SHOW VARIABLES LIKE 'lower_case_table_names'"
+      register: case_sensitive_check
+      changed_when: false
+
+    - name: Displaying the settings status
+      debug:
+        msg: "Register-dependent mode: {{ case_sensitive_check.stdout_lines }}"
+
+    - name: Creating a database
+      community.mysql.mysql_db:
+        name: mydatabase
+        state: present
+        login_user: "{{ mysql_user }}"
+        login_password: "{{ mysql_user_password }}"
+
+    - name: Creating a user with privileges
+      community.mysql.mysql_user:
+        name: myuser
+        password: "{{ mysql_user_password }}"
+        priv: "mydatabase.*:ALL"
+        host: '%'  
+        login_user: "{{ mysql_user }}"
+        login_password: "{{ mysql_user_password }}"
