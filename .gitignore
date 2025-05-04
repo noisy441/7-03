@@ -9,3 +9,6 @@
 *.tfstate.*
 
 terraform.tfvars
+
+#ansible vault
+**/group_vars/*
