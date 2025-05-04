@@ -53,26 +53,100 @@ Host *.ru-central1.internal
 
 ### Задание 1
 
-`Приведите ответ в свободной форме........`
+1. `Повторить демонстрацию лекции(развернуть vpc, 2 веб сервера, бастион сервер)`
+2. `С помощью ansible подключиться к web-a и web-b , установить на них nginx.(написать нужный ansible playbook) Провести тестирование и приложить скриншоты развернутых в облаке ВМ, успешно отработавшего ansible playbook.`
 
-1. `Заполните здесь этапы выполнения, если требуется ....`
-2. `Заполните здесь этапы выполнения, если требуется ....`
-3. `Заполните здесь этапы выполнения, если требуется ....`
-4. `Заполните здесь этапы выполнения, если требуется ....`
-5. `Заполните здесь этапы выполнения, если требуется ....`
-6. 
+### Решение 1
+
+install_nginx.yml
 
 ```
-Поле для вставки кода...
-....
-....
-....
-....
+---
+- hosts: webservers
+  become: true
+  tasks:
+    - name: install nginx
+      apt:
+        name: nginx
+        state: latest
+
+    - name: copy nginx configuration
+      template:
+        src: nginx.conf.j2
+        dest: /etc/nginx/nginx.conf
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: create web root directory
+      file:
+        path: /var/www/html
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: '0755'
+
+    - name: start nginx
+      service:
+        name: nginx
+        state: started
+        enabled: true
+
+    - name: check nginx status
+      command: systemctl status nginx
+      register: nginx_status
+      changed_when: false
+
+    - name: display nginx status
+      debug:
+        var: nginx_status.stdout_lines
+
 ```
+nginx.conf.j2
 
-`При необходимости прикрепитe сюда скриншоты
-![Название скриншота 1](ссылка на скриншот 1)`
+```
+worker_processes auto;
+error_log /var/log/nginx/error.log;
+pid /run/nginx.pid;
 
+events {
+    worker_connections 1024;
+}
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    log_format main '$remote_addr - $remote_user [$time_local] '
+    '"$request" $status $body_bytes_sent '
+    '"$http_referer" "$http_user_agent"';
+
+    access_log /var/log/nginx/access.log main;
+
+    sendfile        on;
+    keepalive_timeout 65;
+
+    server {
+        listen 80 default_server;
+        listen [::]:80 default_server;
+
+        root /var/www/html;
+        index index.html index.htm;
+
+        server_name _;
+
+        location / {
+            try_files $uri $uri/ =404;
+        }
+    }
+}
+
+
+```
+![Скриншот 1](https://github.com/noisy441/7-03/blob/main/img/img1.png)`
+![Скриншот 2](https://github.com/noisy441/7-03/blob/main/img/img2.png)`
+![Скриншот 3](https://github.com/noisy441/7-03/blob/main/img/img3.png)`
+![Скриншот 4](https://github.com/noisy441/7-03/blob/main/img/img4.png)`
 
 ---
 

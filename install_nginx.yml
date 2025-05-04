@@ -1,0 +1,39 @@
+---
+- hosts: webservers
+  become: true
+  tasks:
+    - name: install nginx
+      apt:
+        name: nginx
+        state: latest
+
+    - name: copy nginx configuration
+      template:
+        src: nginx.conf.j2
+        dest: /etc/nginx/nginx.conf
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: create web root directory
+      file:
+        path: /var/www/html
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: '0755'
+
+    - name: start nginx
+      service:
+        name: nginx
+        state: started
+        enabled: true
+
+    - name: check nginx status
+      command: systemctl status nginx
+      register: nginx_status
+      changed_when: false
+
+    - name: display nginx status
+      debug:
+        var: nginx_status.stdout_lines
