@@ -144,8 +144,11 @@ http {
 
 ```
 ![Скриншот 1](https://github.com/noisy441/7-03/blob/main/img/img1.png)`
+
 ![Скриншот 2](https://github.com/noisy441/7-03/blob/main/img/img2.png)`
+
 ![Скриншот 3](https://github.com/noisy441/7-03/blob/main/img/img3.png)`
+
 ![Скриншот 4](https://github.com/noisy441/7-03/blob/main/img/img4.png)`
 
 ---
