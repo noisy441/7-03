@@ -58,7 +58,7 @@ Host *.ru-central1.internal
 
 ### Решение 1 и 2
 
-install_nginx.yml
+**install_nginx.yml**
 
 ```
 ---
@@ -102,7 +102,8 @@ install_nginx.yml
         var: nginx_status.stdout_lines
 
 ```
-nginx.conf.j2
+
+**nginx.conf.j2**
 
 ```
 worker_processes auto;
@@ -167,7 +168,7 @@ http {
 `Я создал еще одну виртуальную машину с именем web-c. Для более удобного использования ansible, адрес новой машины записывается в hosts.ini в раздел [dbservers]. Я решил устанавливать на эту машину mysql, для чего был создан отдельный плейбук db_playbook.yml. что бы пароли не лежали в открытом доступе использовал ansible vault и занес файл с зашифрованными паролями в .gitignore. В test.yml была добавлена проверка состояния службы mysql`
 
 
-db_playbook.yml
+**db_playbook.yml**
 
 ```
 ---
